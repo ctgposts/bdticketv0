@@ -17,24 +17,31 @@ import { hasPermission } from "@/lib/auth"
 
 interface Ticket {
   id: string
-  sl?: number
-  airline?: string
-  flight_number?: string
-  departure_date?: string
-  departure_time?: string
-  arrival_time?: string
+  flight_number: string
+  airline_name: string
+  departure_date: string
+  departure_time: string
+  arrival_time: string
   selling_price: number
-  buying_price?: number
+  buying_price: number
   available_seats: number
   total_seats: number
-  status: "available" | "booked" | "locked" | "sold"
-  country?: {
-    code: string
+  status: "available" | "locked" | "sold"
+  origin_country: {
     name: string
+    code: string
     flag: string
   }
-  origin?: string
-  destination?: string
+  destination_country: {
+    name: string
+    code: string
+    flag: string
+  }
+  airline?: {
+    name: string
+    code: string
+    logo?: string
+  }
 }
 
 interface TicketRowProps {
@@ -63,8 +70,6 @@ function TicketRow({ ticket, index, showBuyingPrice, onView, onBook }: TicketRow
             Available
           </Badge>
         )
-      case "booked":
-        return <Badge variant="secondary">Booked</Badge>
       case "locked":
         return (
           <Badge variant="secondary" className="gap-1">
@@ -90,34 +95,30 @@ function TicketRow({ ticket, index, showBuyingPrice, onView, onBook }: TicketRow
       className={`border-b hover:bg-accent/50 transition-colors ${isDisabled ? "opacity-60" : ""}`}
     >
       <td className="p-3 text-center font-body">{index + 1}</td>
-      <td className="p-3 font-body font-semibold">{ticket.airline || "N/A"}</td>
-      <td className="p-3 font-body">{ticket.flight_number || "N/A"}</td>
+      <td className="p-3 font-body font-semibold">{ticket.airline_name}</td>
+      <td className="p-3 font-body">{ticket.flight_number}</td>
       <td className="p-3 font-body">
-        {ticket.origin || "Dhaka"} → {ticket.destination || ticket.country?.name || "N/A"}
+        {ticket.origin_country.name} → {ticket.destination_country.name}
       </td>
       <td className="p-3">
         <div className="flex items-center gap-2">
-          {ticket.country?.flag && <span className="text-xl">{ticket.country.flag}</span>}
-          <span className="font-body">{ticket.country?.name || "N/A"}</span>
+          <span className="text-xl">{ticket.destination_country.flag}</span>
+          <span className="font-body">{ticket.destination_country.name}</span>
         </div>
       </td>
+      <td className="p-3 font-body">{new Date(ticket.departure_date).toLocaleDateString()}</td>
       <td className="p-3 font-body">
-        {ticket.departure_date ? new Date(ticket.departure_date).toLocaleDateString() : "N/A"}
-      </td>
-      <td className="p-3 font-body">
-        {ticket.departure_date
-          ? new Date(ticket.departure_date).toLocaleDateString("en-US", { weekday: "long" })
-          : "N/A"}
+        {new Date(ticket.departure_date).toLocaleDateString("en-US", { weekday: "long" })}
       </td>
       <td className="p-3 font-body">
         <div className="space-y-1">
-          <div>{ticket.departure_time || "N/A"}</div>
+          <div>{ticket.departure_time}</div>
           {ticket.arrival_time && <div className="text-xs text-muted-foreground">Arr: {ticket.arrival_time}</div>}
         </div>
       </td>
       <td className="p-3 font-body font-semibold text-primary">৳{ticket.selling_price.toLocaleString()}</td>
       {showBuyingPrice && (
-        <td className="p-3 font-body text-muted-foreground">৳{ticket.buying_price?.toLocaleString() || "N/A"}</td>
+        <td className="p-3 font-body text-muted-foreground">৳{ticket.buying_price.toLocaleString()}</td>
       )}
       <td className="p-3 text-center">
         <Badge variant="secondary" className="font-body">
@@ -155,13 +156,13 @@ export default function TicketsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [countryFilter, setCountryFilter] = useState(searchParams?.get("country") || "all")
-  const [airlineFilter, setAirlineFilter] = useState("all")
   const [tickets, setTickets] = useState<Ticket[]>([])
+  const [countries, setCountries] = useState<Array<{ code: string; name: string }>>([])
+  const [airlines, setAirlines] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
   const [showBookingDialog, setShowBookingDialog] = useState(false)
-  const [showViewDialog, setShowViewDialog] = useState(false)
 
   const showBuyingPrice = user ? hasPermission(user, "view_buying_price") : false
 
@@ -169,51 +170,34 @@ export default function TicketsPage() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch("/api/tickets")
+
+      const params = new URLSearchParams()
+      if (searchTerm) params.append("search", searchTerm)
+      if (statusFilter !== "all") params.append("status", statusFilter)
+      if (countryFilter !== "all") params.append("destination", countryFilter)
+
+      const response = await fetch(`/api/tickets?${params.toString()}`)
       if (!response.ok) throw new Error("Failed to load tickets")
+
       const data = await response.json()
-      setTickets(data.tickets || [])
+      setTickets(data)
+
+      // Extract unique countries and airlines
+      const uniqueCountries = Array.from(
+        new Set(
+          data.map((t: Ticket) =>
+            JSON.stringify({ code: t.destination_country.code, name: t.destination_country.name }),
+          ),
+        ),
+      ).map((str) => JSON.parse(str as string))
+
+      const uniqueAirlines = Array.from(new Set(data.map((t: Ticket) => t.airline_name)))
+
+      setCountries(uniqueCountries)
+      setAirlines(uniqueAirlines as string[])
     } catch (err) {
-      console.error("Failed to load tickets:", err)
+      console.error("[v0] Failed to load tickets:", err)
       setError(err instanceof Error ? err.message : "Failed to load tickets")
-      // Demo data
-      const demoTickets: Ticket[] = [
-        {
-          id: "1",
-          sl: 1,
-          airline: "Saudi Airlines",
-          flight_number: "SV801",
-          departure_date: "2024-12-25",
-          departure_time: "10:30 AM",
-          arrival_time: "2:45 PM",
-          selling_price: 45000,
-          buying_price: 42000,
-          available_seats: 5,
-          total_seats: 10,
-          status: "available",
-          country: { code: "KSA", name: "Saudi Arabia", flag: "🇸🇦" },
-          origin: "Dhaka",
-          destination: "Riyadh",
-        },
-        {
-          id: "2",
-          sl: 2,
-          airline: "Emirates",
-          flight_number: "EK582",
-          departure_date: "2024-12-26",
-          departure_time: "11:00 AM",
-          arrival_time: "3:30 PM",
-          selling_price: 48000,
-          buying_price: 45000,
-          available_seats: 8,
-          total_seats: 15,
-          status: "available",
-          country: { code: "UAE", name: "United Arab Emirates", flag: "🇦🇪" },
-          origin: "Dhaka",
-          destination: "Dubai",
-        },
-      ]
-      setTickets(demoTickets)
     } finally {
       setLoading(false)
     }
@@ -221,14 +205,18 @@ export default function TicketsPage() {
 
   useEffect(() => {
     loadTickets()
-  }, [])
+  }, [statusFilter, countryFilter])
 
   const handleBookTicket = async (bookingData: any) => {
     try {
       const response = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bookingData),
+        body: JSON.stringify({
+          ...bookingData,
+          ticket_id: selectedTicket?.id,
+          agent_name: user?.name,
+        }),
       })
 
       if (!response.ok) throw new Error("Failed to create booking")
@@ -240,6 +228,7 @@ export default function TicketsPage() {
       setShowBookingDialog(false)
       loadTickets()
     } catch (error) {
+      console.error("[v0] Booking error:", error)
       toast({
         title: "Booking Failed",
         description: error instanceof Error ? error.message : "Failed to create booking",
@@ -249,17 +238,13 @@ export default function TicketsPage() {
   }
 
   const filteredTickets = tickets.filter((ticket) => {
-    const matchesSearch =
-      searchTerm === "" ||
-      ticket.airline?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    if (searchTerm === "") return true
+
+    return (
+      ticket.airline_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.flight_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.country?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-
-    const matchesStatus = statusFilter === "all" || ticket.status === statusFilter
-    const matchesCountry = countryFilter === "all" || ticket.country?.code === countryFilter
-    const matchesAirline = airlineFilter === "all" || ticket.airline === airlineFilter
-
-    return matchesSearch && matchesStatus && matchesCountry && matchesAirline
+      ticket.destination_country?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   })
 
   if (loading) {
@@ -290,7 +275,7 @@ export default function TicketsPage() {
             <div className="flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-yellow-600" />
               <div>
-                <p className="font-semibold text-yellow-900 font-heading">Using Demo Data</p>
+                <p className="font-semibold text-yellow-900 font-heading">Error Loading Tickets</p>
                 <p className="text-sm text-yellow-700 font-body">{error}</p>
               </div>
             </div>
@@ -303,7 +288,7 @@ export default function TicketsPage() {
           <CardTitle className="font-heading">Search & Filter</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -330,20 +315,11 @@ export default function TicketsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Countries</SelectItem>
-                <SelectItem value="KSA">Saudi Arabia</SelectItem>
-                <SelectItem value="UAE">UAE</SelectItem>
-                <SelectItem value="QAT">Qatar</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={airlineFilter} onValueChange={setAirlineFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Airline" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Airlines</SelectItem>
-                <SelectItem value="Saudi Airlines">Saudi Airlines</SelectItem>
-                <SelectItem value="Emirates">Emirates</SelectItem>
-                <SelectItem value="Qatar Airways">Qatar Airways</SelectItem>
+                {countries.map((country) => (
+                  <SelectItem key={country.code} value={country.code}>
+                    {country.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -380,7 +356,6 @@ export default function TicketsPage() {
                     showBuyingPrice={showBuyingPrice}
                     onView={(t) => {
                       setSelectedTicket(t)
-                      setShowViewDialog(true)
                     }}
                     onBook={(t) => {
                       setSelectedTicket(t)

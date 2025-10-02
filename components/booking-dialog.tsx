@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -34,7 +33,6 @@ export function BookingDialog({ isOpen, onClose, ticket, onSubmit }: BookingDial
     paymentType: "full",
     partialAmount: 0,
     paymentMethod: "cash",
-    paymentDetails: "",
     comments: "",
     emergencyContact: "",
     specialRequests: "",
@@ -55,29 +53,25 @@ export function BookingDialog({ isOpen, onClose, ticket, onSubmit }: BookingDial
     setIsSubmitting(true)
     try {
       await onSubmit({
-        ticketId: ticket?.id,
-        agentInfo: {
-          name: formData.agentName,
-          phone: formData.agentPhone,
-          email: formData.agentEmail,
-        },
-        passengerInfo: {
-          name: formData.passengerName,
-          passportNo: formData.passportNo,
-          phone: formData.passengerPhone,
-          email: formData.passengerEmail,
-          paxCount: 1,
-        },
-        sellingPrice: formData.sellingPrice,
-        paymentType: formData.paymentType,
-        partialAmount: formData.partialAmount,
-        paymentMethod: formData.paymentMethod,
-        paymentDetails: formData.paymentDetails,
+        ticket_id: ticket?.id,
+        agent_name: formData.agentName,
+        agent_phone: formData.agentPhone,
+        agent_email: formData.agentEmail,
+        passenger_name: formData.passengerName,
+        passenger_passport: formData.passportNo,
+        passenger_phone: formData.passengerPhone,
+        passenger_email: formData.passengerEmail,
+        total_amount: formData.sellingPrice,
+        payment_type: formData.paymentType,
+        partial_amount: formData.paymentType === "partial" ? formData.partialAmount : null,
+        payment_method: formData.paymentMethod,
+        profit: formData.sellingPrice - (ticket?.buying_price || 0),
         comments: `${formData.comments} | Emergency: ${formData.emergencyContact} | Special: ${formData.specialRequests}`,
+        status: "pending",
       })
       onClose()
     } catch (error) {
-      console.error("Booking submission failed:", error)
+      console.error("[v0] Booking submission failed:", error)
     } finally {
       setIsSubmitting(false)
     }
@@ -113,7 +107,7 @@ export function BookingDialog({ isOpen, onClose, ticket, onSubmit }: BookingDial
                 <CalendarDays className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">Date</p>
-                  <p className="font-semibold">{new Date(ticket.flight_date).toLocaleDateString()}</p>
+                  <p className="font-semibold">{new Date(ticket.departure_date).toLocaleDateString()}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">

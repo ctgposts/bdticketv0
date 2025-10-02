@@ -1,36 +1,35 @@
+import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
-// PATCH - Update booking status
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params
+    const { id } = await params
+    const supabase = await createClient()
     const body = await request.json()
-    const { status } = body
 
-    // In a real app, update in database
-    // For now, just return success
-    return NextResponse.json({
-      success: true,
-      message: `Booking ${id} status updated to ${status}`,
-    })
+    const { data, error } = await supabase.from("bookings").update(body).eq("id", id).select().single()
+
+    if (error) throw error
+
+    return NextResponse.json(data)
   } catch (error) {
-    console.error("Error updating booking:", error)
+    console.error("[v0] Error updating booking:", error)
     return NextResponse.json({ error: "Failed to update booking" }, { status: 500 })
   }
 }
 
-// DELETE - Cancel booking
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params
+    const { id } = await params
+    const supabase = await createClient()
 
-    // In a real app, delete from database or mark as cancelled
-    return NextResponse.json({
-      success: true,
-      message: `Booking ${id} cancelled`,
-    })
+    const { error } = await supabase.from("bookings").delete().eq("id", id)
+
+    if (error) throw error
+
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error cancelling booking:", error)
-    return NextResponse.json({ error: "Failed to cancel booking" }, { status: 500 })
+    console.error("[v0] Error deleting booking:", error)
+    return NextResponse.json({ error: "Failed to delete booking" }, { status: 500 })
   }
 }

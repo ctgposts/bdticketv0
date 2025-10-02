@@ -115,7 +115,7 @@ export default function CountriesPage() {
       }
       setError(null)
 
-      const response = await fetch("/api/countries")
+      const response = await fetch("/api/countries/stats")
       if (!response.ok) throw new Error("Failed to load countries")
 
       const data = await response.json()
@@ -131,7 +131,7 @@ export default function CountriesPage() {
         setError(null)
       }
     } catch (err) {
-      console.error("Failed to load countries:", err)
+      console.error("[v0] Failed to load countries:", err)
       const errorMessage = err instanceof Error ? err.message : "Failed to load countries"
       setError(errorMessage)
 

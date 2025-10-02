@@ -5,14 +5,14 @@ export async function GET() {
   try {
     const supabase = await createClient()
 
-    const { data, error } = await supabase.from("countries").select("*").order("name", { ascending: true })
+    const { data, error } = await supabase.from("airlines").select("*").order("name", { ascending: true })
 
     if (error) throw error
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error("[v0] Error fetching countries:", error)
-    return NextResponse.json({ error: "Failed to fetch countries" }, { status: 500 })
+    console.error("[v0] Error fetching airlines:", error)
+    return NextResponse.json({ error: "Failed to fetch airlines" }, { status: 500 })
   }
 }
 
@@ -21,13 +21,13 @@ export async function POST(request: Request) {
     const supabase = await createClient()
     const body = await request.json()
 
-    const { data, error } = await supabase.from("countries").insert([body]).select().single()
+    const { data, error } = await supabase.from("airlines").insert([body]).select().single()
 
     if (error) throw error
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error("[v0] Error creating country:", error)
-    return NextResponse.json({ error: "Failed to create country" }, { status: 500 })
+    console.error("[v0] Error creating airline:", error)
+    return NextResponse.json({ error: "Failed to create airline" }, { status: 500 })
   }
 }
