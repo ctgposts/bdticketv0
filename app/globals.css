@@ -45,39 +45,39 @@
   --font-heading: var(--font-oswald), "Arial Black", "Helvetica Bold", sans-serif;
   --font-body: var(--font-montserrat), "Arial", "Helvetica", sans-serif;
 
-  /* Warm brown/gold theme matching original */
-  --color-background: oklch(96% 0.02 85);
+  /* Updated to light golden & ghee color mix */
+  --color-background: oklch(98% 0.03 75);
   --color-foreground: oklch(15% 0.01 85);
-  --color-card: oklch(98% 0.01 85);
+  --color-card: oklch(99% 0.02 75);
   --color-card-foreground: oklch(15% 0.01 85);
-  --color-popover: oklch(98% 0.01 85);
+  --color-popover: oklch(99% 0.02 75);
   --color-popover-foreground: oklch(15% 0.01 85);
   --color-primary: oklch(35% 0.05 40);
   --color-primary-foreground: oklch(98% 0.01 85);
-  --color-secondary: oklch(92% 0.02 42);
+  --color-secondary: oklch(95% 0.03 70);
   --color-secondary-foreground: oklch(15% 0.01 85);
-  --color-muted: oklch(94% 0.02 42);
+  --color-muted: oklch(96% 0.03 72);
   --color-muted-foreground: oklch(45% 0.01 85);
-  --color-accent: oklch(88% 0.03 38);
+  --color-accent: oklch(92% 0.04 68);
   --color-accent-foreground: oklch(15% 0.01 85);
   --color-destructive: oklch(55% 0.2 27);
   --color-destructive-foreground: oklch(98% 0.01 85);
-  --color-border: oklch(85% 0.02 40);
-  --color-input: oklch(92% 0.02 42);
+  --color-border: oklch(88% 0.03 70);
+  --color-input: oklch(95% 0.03 70);
   --color-ring: oklch(35% 0.05 40);
   --color-chart-1: oklch(0.646 0.222 41.116);
   --color-chart-2: oklch(0.6 0.118 184.704);
   --color-chart-3: oklch(0.398 0.07 227.392);
   --color-chart-4: oklch(0.828 0.189 84.429);
   --color-chart-5: oklch(0.769 0.188 70.08);
-  --color-sidebar: oklch(0.985 0 0);
-  --color-sidebar-foreground: oklch(0.145 0 0);
-  --color-sidebar-primary: oklch(0.205 0 0);
-  --color-sidebar-primary-foreground: oklch(0.985 0 0);
-  --color-sidebar-accent: oklch(0.97 0 0);
-  --color-sidebar-accent-foreground: oklch(0.205 0 0);
-  --color-sidebar-border: oklch(0.922 0 0);
-  --color-sidebar-ring: oklch(0.708 0 0);
+  --color-sidebar: oklch(99% 0.02 75);
+  --color-sidebar-foreground: oklch(15% 0.01 85);
+  --color-sidebar-primary: oklch(35% 0.05 40);
+  --color-sidebar-primary-foreground: oklch(98% 0.01 85);
+  --color-sidebar-accent: oklch(96% 0.03 72);
+  --color-sidebar-accent-foreground: oklch(15% 0.01 85);
+  --color-sidebar-border: oklch(88% 0.03 70);
+  --color-sidebar-ring: oklch(35% 0.05 40);
 
   --radius-sm: 0.5rem;
   --radius-md: 0.625rem;
@@ -140,7 +140,8 @@
 
   body {
     @apply bg-background text-foreground font-body;
-    background: linear-gradient(135deg, oklch(96% 0.02 85) 0%, oklch(94% 0.03 42) 100%);
+    /* Updated gradient to light golden & ghee color mix */
+    background: linear-gradient(135deg, oklch(98% 0.03 75) 0%, oklch(96% 0.04 68) 100%);
     min-height: 100vh;
     line-height: 1.6;
     overflow-x: hidden;
@@ -160,9 +161,10 @@
 @layer components {
   /* Luxury card styling */
   .luxury-card {
-    background: linear-gradient(145deg, oklch(98% 0.01 85) 0%, oklch(96% 0.02 42) 100%);
+    /* Updated card gradient to match new golden theme */
+    background: linear-gradient(145deg, oklch(99% 0.02 75) 0%, oklch(97% 0.03 70) 100%);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.5);
-    border: 1px solid oklch(85% 0.02 40);
+    border: 1px solid oklch(88% 0.03 70);
     backdrop-filter: blur(8px);
   }
 
