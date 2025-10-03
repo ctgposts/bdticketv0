@@ -7,30 +7,47 @@ export async function POST(request: Request) {
     const credentials: LoginRequest = await request.json()
     const supabase = await createClient()
 
-    const { data: users, error } = await supabase
+    const { data: user, error } = await supabase
       .from("users")
       .select("*")
       .eq("username", credentials.username)
-      .eq("password", credentials.password)
       .eq("is_active", true)
       .single()
 
-    if (error || !users) {
+    if (error || !user) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
-    const user: User = {
-      id: users.id,
-      username: users.username,
-      name: users.name,
-      email: users.email,
-      role: users.role,
-      createdAt: users.created_at,
+    // For demo purposes, we're using a simple hash comparison
+    const passwordMatch = await verifyPassword(credentials.password, user.password_hash)
+
+    if (!passwordMatch) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
-    return NextResponse.json({ user })
+    const userData: User = {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      createdAt: user.created_at,
+    }
+
+    return NextResponse.json({ user: userData })
   } catch (error) {
     console.error("[v0] Login error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
+}
+
+async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  // For demo purposes, we're using a simple comparison
+  // In production, use bcrypt or similar
+  const encoder = new TextEncoder()
+  const data = encoder.encode(password)
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("")
+  return hashHex === hash
 }
