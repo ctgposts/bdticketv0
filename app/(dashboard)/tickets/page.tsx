@@ -95,15 +95,15 @@ function TicketRow({ ticket, index, showBuyingPrice, onView, onBook }: TicketRow
       className={`border-b hover:bg-accent/50 transition-colors ${isDisabled ? "opacity-60" : ""}`}
     >
       <td className="p-3 text-center font-body">{index + 1}</td>
-      <td className="p-3 font-body font-semibold">{ticket.airline_name}</td>
-      <td className="p-3 font-body">{ticket.flight_number}</td>
+      <td className="p-3 font-body font-semibold">{ticket.airline_name || "N/A"}</td>
+      <td className="p-3 font-body">{ticket.flight_number || "N/A"}</td>
       <td className="p-3 font-body">
-        {ticket.origin_country.name} → {ticket.destination_country.name}
+        {ticket.origin_country?.name || "Unknown"} → {ticket.destination_country?.name || "Unknown"}
       </td>
       <td className="p-3">
         <div className="flex items-center gap-2">
-          <span className="text-xl">{ticket.destination_country.flag}</span>
-          <span className="font-body">{ticket.destination_country.name}</span>
+          <span className="text-xl">{ticket.destination_country?.flag || "🌍"}</span>
+          <span className="font-body">{ticket.destination_country?.name || "Unknown"}</span>
         </div>
       </td>
       <td className="p-3 font-body">{new Date(ticket.departure_date).toLocaleDateString()}</td>
@@ -185,13 +185,15 @@ export default function TicketsPage() {
       // Extract unique countries and airlines
       const uniqueCountries = Array.from(
         new Set(
-          data.map((t: Ticket) =>
-            JSON.stringify({ code: t.destination_country.code, name: t.destination_country.name }),
-          ),
+          data
+            .filter((t: Ticket) => t.destination_country?.code && t.destination_country?.name)
+            .map((t: Ticket) => JSON.stringify({ code: t.destination_country.code, name: t.destination_country.name })),
         ),
       ).map((str) => JSON.parse(str as string))
 
-      const uniqueAirlines = Array.from(new Set(data.map((t: Ticket) => t.airline_name)))
+      const uniqueAirlines = Array.from(
+        new Set(data.filter((t: Ticket) => t.airline_name).map((t: Ticket) => t.airline_name)),
+      )
 
       setCountries(uniqueCountries)
       setAirlines(uniqueAirlines as string[])

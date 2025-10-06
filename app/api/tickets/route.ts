@@ -34,7 +34,23 @@ export async function GET(request: Request) {
       throw error
     }
 
-    return NextResponse.json(data)
+    const transformedData =
+      data?.map((ticket: any) => ({
+        ...ticket,
+        airline_name: ticket.airline?.name || "Unknown Airline",
+        origin_country: {
+          name: ticket.origin || "Unknown",
+          code: "N/A",
+          flag: "🌍",
+        },
+        destination_country: {
+          name: ticket.country?.name || ticket.destination || "Unknown",
+          code: ticket.country?.code || "N/A",
+          flag: ticket.country?.flag || "🌍",
+        },
+      })) || []
+
+    return NextResponse.json(transformedData)
   } catch (error) {
     console.error("[v0] Error fetching tickets:", error)
     return NextResponse.json({ error: "Failed to fetch tickets" }, { status: 500 })
