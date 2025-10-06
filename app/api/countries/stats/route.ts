@@ -16,12 +16,12 @@ export async function GET() {
         const { count: totalTickets } = await supabase
           .from("tickets")
           .select("*", { count: "exact", head: true })
-          .eq("destination_country_id", country.id)
+          .eq("country_id", country.id)
 
         const { count: availableTickets } = await supabase
           .from("tickets")
           .select("*", { count: "exact", head: true })
-          .eq("destination_country_id", country.id)
+          .eq("country_id", country.id)
           .eq("status", "available")
 
         return {

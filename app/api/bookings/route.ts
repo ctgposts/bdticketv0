@@ -15,9 +15,8 @@ export async function GET(request: Request) {
         *,
         ticket:tickets(
           *,
-          origin_country:countries!tickets_origin_country_id_fkey(name, code),
-          destination_country:countries!tickets_destination_country_id_fkey(name, code),
-          airline:airlines(name, code)
+          country:countries!tickets_country_id_fkey(name, code, flag),
+          airline:airlines(name, code, logo_url)
         )
       `)
       .order("created_at", { ascending: false })
@@ -34,7 +33,10 @@ export async function GET(request: Request) {
 
     const { data, error } = await query
 
-    if (error) throw error
+    if (error) {
+      console.error("[v0] Error fetching bookings:", error)
+      throw error
+    }
 
     return NextResponse.json(data)
   } catch (error) {

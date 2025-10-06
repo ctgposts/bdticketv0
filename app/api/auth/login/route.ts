@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/server"
 import type { LoginRequest, User } from "@/types"
 
 export async function POST(request: Request) {
   try {
     const credentials: LoginRequest = await request.json()
-    const supabase = await createClient()
+    const supabase = await createServiceClient()
 
     const { data: user, error } = await supabase
       .from("users")
@@ -15,6 +15,7 @@ export async function POST(request: Request) {
       .single()
 
     if (error || !user) {
+      console.error("[v0] User lookup error:", error)
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
