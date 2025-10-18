@@ -3,7 +3,6 @@
 import type React from "react"
 
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { Sidebar } from "@/components/layout/sidebar"
 import { Header } from "@/components/layout/header"
@@ -14,13 +13,6 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const { user, loading } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login")
-    }
-  }, [user, loading, router])
 
   if (loading) {
     return (
@@ -31,10 +23,6 @@ export default function DashboardLayout({
         </div>
       </div>
     )
-  }
-
-  if (!user) {
-    return null
   }
 
   return (

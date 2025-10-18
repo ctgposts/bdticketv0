@@ -5,9 +5,10 @@ import type React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Globe, Ticket, Package, ShoppingCart, Settings, BarChart3, MapPin } from "lucide-react"
+import { LayoutDashboard, Globe, Ticket, Package, ShoppingCart, Settings, BarChart3, MapPin, X } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { hasPermission } from "@/lib/auth"
+import { Button } from "@/components/ui/button"
 
 interface NavItem {
   path: string
@@ -16,7 +17,13 @@ interface NavItem {
   permission?: string
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean
+  onClose?: () => void
+  isMobile?: boolean
+}
+
+export function Sidebar({ isOpen = true, onClose, isMobile = false }: SidebarProps) {
   const pathname = usePathname()
   const { user } = useAuth()
 
@@ -67,11 +74,23 @@ export function Sidebar() {
 
   const visibleNavItems = navigationItems.filter((item) => !item.permission || hasPermission(user, item.permission))
 
-  return (
-    <aside className="hidden lg:flex flex-col w-64 luxury-card border-r border-border h-screen sticky top-0">
-      <div className="p-6 border-b border-border">
-        <h1 className="text-xl font-heading font-bold velvet-text">BD TicketPro</h1>
-        <p className="text-sm text-muted-foreground font-body">Travel Management</p>
+  const sidebarContent = (
+    <>
+      <div className="p-6 border-b border-border flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-heading font-bold velvet-text">BD TicketPro</h1>
+          <p className="text-sm text-muted-foreground font-body">Travel Management</p>
+        </div>
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="lg:hidden"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        )}
       </div>
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -81,6 +100,7 @@ export function Sidebar() {
             <Link
               key={item.path}
               href={item.path}
+              onClick={isMobile ? onClose : undefined}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 font-body",
                 isActive
@@ -108,6 +128,32 @@ export function Sidebar() {
           </div>
         </div>
       )}
-    </aside>
+    </>
+  )
+
+  // Desktop sidebar
+  if (!isMobile) {
+    return (
+      <aside className="hidden lg:flex flex-col w-64 luxury-card border-r border-border h-screen sticky top-0">
+        {sidebarContent}
+      </aside>
+    )
+  }
+
+  // Mobile sidebar drawer
+  return (
+    <>
+      {isOpen && (
+        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={onClose} />
+      )}
+      <aside
+        className={cn(
+          "fixed left-0 top-0 h-screen w-64 luxury-card border-r border-border z-50 flex flex-col transition-transform duration-300 lg:hidden",
+          isOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
+        {sidebarContent}
+      </aside>
+    </>
   )
 }
