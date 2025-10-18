@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import type { User, LoginRequest } from "@/types"
-import { useRouter } from "next/navigation"
 
 interface AuthContextType {
   user: User | null
@@ -13,52 +12,31 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+const DEFAULT_USER: User = {
+  id: "default-user-1",
+  username: "admin",
+  name: "Administrator",
+  email: "admin@example.com",
+  role: "admin",
+  createdAt: new Date().toISOString(),
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
 
   useEffect(() => {
-    // Check for stored auth data
-    const userData = localStorage.getItem("bd_ticket_pro_user")
-    if (userData) {
-      try {
-        const parsedUser = JSON.parse(userData)
-        setUser(parsedUser)
-      } catch (error) {
-        console.error("Error parsing stored user data:", error)
-        localStorage.removeItem("bd_ticket_pro_user")
-      }
-    }
+    setUser(DEFAULT_USER)
     setLoading(false)
   }, [])
 
   const login = async (credentials: LoginRequest): Promise<boolean> => {
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials),
-      })
-
-      if (!response.ok) {
-        return false
-      }
-
-      const data = await response.json()
-      setUser(data.user)
-      localStorage.setItem("bd_ticket_pro_user", JSON.stringify(data.user))
-      return true
-    } catch (error) {
-      console.error("Login error:", error)
-      return false
-    }
+    setUser(DEFAULT_USER)
+    return true
   }
 
   const logout = () => {
-    setUser(null)
-    localStorage.removeItem("bd_ticket_pro_user")
-    router.push("/login")
+    setUser(DEFAULT_USER)
   }
 
   return <AuthContext.Provider value={{ user, login, logout, loading }}>{children}</AuthContext.Provider>
