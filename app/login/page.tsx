@@ -1,8 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/contexts/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,19 +9,9 @@ import { LogIn } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { user, loading } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [username, setUsername] = useState("admin")
   const [password, setPassword] = useState("admin")
-
-  useEffect(() => {
-    if (!loading && user) {
-      const timer = setTimeout(() => {
-        router.push("/dashboard")
-      }, 2000)
-      return () => clearTimeout(timer)
-    }
-  }, [user, loading, router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,28 +31,6 @@ export default function LoginPage() {
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 font-body">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 font-body">Redirecting to dashboard...</p>
-        </div>
-      </div>
-    )
   }
 
   return (
