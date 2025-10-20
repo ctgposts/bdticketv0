@@ -400,7 +400,7 @@ export default function ReportsPage() {
         </CardHeader>
         <CardContent>
           {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
+            <ChartContainer width="100%" height={300}>
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
@@ -410,7 +410,7 @@ export default function ReportsPage() {
                 <Bar dataKey="profit" fill="#10b981" name="Profit (৳)" />
                 <Bar dataKey="revenue" fill="#3b82f6" name="Revenue (৳)" />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           ) : (
             <p className="text-muted-foreground">No data available</p>
           )}
