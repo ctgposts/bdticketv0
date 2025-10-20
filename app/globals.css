@@ -241,6 +241,7 @@
     will-change: transform, box-shadow;
     transform: translateZ(0);
     backface-visibility: hidden;
+    contain: layout style paint;
   }
 
   .velvet-button:hover:not(:disabled) {
