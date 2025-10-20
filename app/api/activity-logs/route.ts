@@ -1,46 +1,86 @@
-import { createClient } from "@/lib/supabase/server"
-import { NextResponse } from "next/server"
+import { NextResponse, NextRequest } from "next/server"
 
-export async function GET(request: Request) {
+const DEMO_ACTIVITY_LOGS = [
+  {
+    id: "log-1",
+    user_id: "default-user-1",
+    action: "booking_created",
+    description: "New booking created for Ahmed Hassan",
+    booking_id: "bk-1",
+    created_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "log-2",
+    user_id: "default-user-1",
+    action: "ticket_purchased",
+    description: "Bulk ticket purchase of 20 tickets",
+    created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "log-3",
+    user_id: "default-user-1",
+    action: "booking_confirmed",
+    description: "Booking BK12345678 confirmed",
+    booking_id: "bk-1",
+    created_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "log-4",
+    user_id: "default-user-1",
+    action: "payment_received",
+    description: "Payment received for booking BK87654321",
+    booking_id: "bk-2",
+    created_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "log-5",
+    user_id: "default-user-1",
+    action: "report_generated",
+    description: "Sales report generated for the month",
+    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+  },
+]
+
+export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
     const { searchParams } = new URL(request.url)
 
     const userId = searchParams.get("user_id")
     const action = searchParams.get("action")
     const limit = Number.parseInt(searchParams.get("limit") || "50")
 
-    let query = supabase.from("activity_logs").select("*").order("created_at", { ascending: false }).limit(limit)
+    let filtered = DEMO_ACTIVITY_LOGS
 
     if (userId) {
-      query = query.eq("user_id", userId)
+      filtered = filtered.filter((log) => log.user_id === userId)
     }
 
     if (action) {
-      query = query.eq("action", action)
+      filtered = filtered.filter((log) => log.action === action)
     }
 
-    const { data, error } = await query
+    const result = filtered.slice(0, limit).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
-    if (error) throw error
-
-    return NextResponse.json(data)
+    return NextResponse.json(result)
   } catch (error) {
     console.error("[v0] Error fetching activity logs:", error)
     return NextResponse.json({ error: "Failed to fetch activity logs" }, { status: 500 })
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
     const body = await request.json()
 
-    const { data, error } = await supabase.from("activity_logs").insert([body]).select().single()
+    const newLog = {
+      id: `log-${Date.now()}`,
+      ...body,
+      created_at: new Date().toISOString(),
+    }
 
-    if (error) throw error
+    DEMO_ACTIVITY_LOGS.push(newLog)
 
-    return NextResponse.json(data)
+    return NextResponse.json(newLog)
   } catch (error) {
     console.error("[v0] Error creating activity log:", error)
     return NextResponse.json({ error: "Failed to create activity log" }, { status: 500 })
