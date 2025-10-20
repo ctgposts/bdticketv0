@@ -197,7 +197,7 @@ export default function ReportsPage() {
         </CardHeader>
         <CardContent>
           {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
+            <ChartContainer width="100%" height={300}>
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
@@ -207,7 +207,7 @@ export default function ReportsPage() {
                 <Line type="monotone" dataKey="sales" stroke="#3b82f6" name="Bookings" />
                 <Line type="monotone" dataKey="revenue" stroke="#10b981" name="Revenue (৳)" />
               </LineChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           ) : (
             <p className="text-muted-foreground">No data available</p>
           )}
