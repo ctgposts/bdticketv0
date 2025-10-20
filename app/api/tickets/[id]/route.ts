@@ -1,56 +1,92 @@
-import { createClient } from "@/lib/supabase/server"
-import { NextResponse } from "next/server"
+import { NextResponse, NextRequest } from "next/server"
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+const DEMO_TICKETS = [
+  {
+    id: "ticket-1",
+    flight_number: "FG-101",
+    airline_name: "FlyGlobal Airways",
+    status: "available",
+    available_seats: 12,
+    total_seats: 20,
+    buying_price: 36500,
+    selling_price: 45000,
+    departure_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "ticket-2",
+    flight_number: "EK-205",
+    airline_name: "Emirates",
+    status: "locked",
+    available_seats: 5,
+    total_seats: 15,
+    buying_price: 41600,
+    selling_price: 52000,
+    departure_date: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "ticket-3",
+    flight_number: "QR-332",
+    airline_name: "Qatar Airways",
+    status: "available",
+    available_seats: 8,
+    total_seats: 25,
+    buying_price: 46800,
+    selling_price: 58500,
+    departure_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+]
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const supabase = await createClient()
+    const ticket = DEMO_TICKETS.find((t) => t.id === id)
 
-    const { data, error } = await supabase
-      .from("tickets")
-      .select(`
-        *,
-        origin_country:countries!tickets_origin_country_id_fkey(name, code, flag),
-        destination_country:countries!tickets_destination_country_id_fkey(name, code, flag),
-        airline:airlines(name, code, logo)
-      `)
-      .eq("id", id)
-      .single()
+    if (!ticket) {
+      return NextResponse.json({ error: "Ticket not found" }, { status: 404 })
+    }
 
-    if (error) throw error
-
-    return NextResponse.json(data)
+    return NextResponse.json(ticket)
   } catch (error) {
     console.error("[v0] Error fetching ticket:", error)
     return NextResponse.json({ error: "Failed to fetch ticket" }, { status: 500 })
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const supabase = await createClient()
     const body = await request.json()
 
-    const { data, error } = await supabase.from("tickets").update(body).eq("id", id).select().single()
+    const ticketIndex = DEMO_TICKETS.findIndex((t) => t.id === id)
+    if (ticketIndex === -1) {
+      return NextResponse.json({ error: "Ticket not found" }, { status: 404 })
+    }
 
-    if (error) throw error
+    const updatedTicket = {
+      ...DEMO_TICKETS[ticketIndex],
+      ...body,
+      id,
+    }
 
-    return NextResponse.json(data)
+    DEMO_TICKETS[ticketIndex] = updatedTicket
+
+    return NextResponse.json(updatedTicket)
   } catch (error) {
     console.error("[v0] Error updating ticket:", error)
     return NextResponse.json({ error: "Failed to update ticket" }, { status: 500 })
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const supabase = await createClient()
+    const ticketIndex = DEMO_TICKETS.findIndex((t) => t.id === id)
 
-    const { error } = await supabase.from("tickets").delete().eq("id", id)
+    if (ticketIndex === -1) {
+      return NextResponse.json({ error: "Ticket not found" }, { status: 404 })
+    }
 
-    if (error) throw error
+    DEMO_TICKETS.splice(ticketIndex, 1)
 
     return NextResponse.json({ success: true })
   } catch (error) {
