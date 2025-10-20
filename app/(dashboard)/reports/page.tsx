@@ -291,7 +291,7 @@ export default function ReportsPage() {
         </CardHeader>
         <CardContent>
           {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
+            <ChartContainer width="100%" height={300}>
               <PieChart>
                 <Pie
                   data={chartData}
@@ -309,7 +309,7 @@ export default function ReportsPage() {
                 </Pie>
                 <Tooltip />
               </PieChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           ) : (
             <p className="text-muted-foreground">No data available</p>
           )}
