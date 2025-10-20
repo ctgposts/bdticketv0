@@ -23,8 +23,20 @@ export async function GET(request: Request) {
       query = query.eq("status", status)
     }
 
-    if (destination) {
-      query = query.eq("country_id", destination)
+    if (destination && destination !== "all") {
+      // First, look up the country ID by code
+      const { data: countryData, error: countryError } = await supabase
+        .from("countries")
+        .select("id")
+        .eq("code", destination)
+        .single()
+
+      if (countryError || !countryData) {
+        console.error("[v0] Country not found:", destination)
+        return NextResponse.json({ error: "Country not found" }, { status: 400 })
+      }
+
+      query = query.eq("country_id", countryData.id)
     }
 
     const { data, error } = await query

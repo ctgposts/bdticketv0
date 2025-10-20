@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server"
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServiceClient()
+    const supabase = await createServiceClient()
     const searchParams = request.nextUrl.searchParams
 
     const status = searchParams.get("status")
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServiceClient()
+    const supabase = await createServiceClient()
     const body = await request.json()
 
     const { pilgrims, ...bookingData } = body
