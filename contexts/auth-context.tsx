@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<AuthSession | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  const supabaseClient = createClient()
 
   // Initialize auth state from session
   useEffect(() => {
