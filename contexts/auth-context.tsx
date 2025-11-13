@@ -38,12 +38,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // Check if Supabase is configured
-        if (
-          !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-          !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-        ) {
-          setUser(DEFAULT_USER) // Use demo user if Supabase not configured
+        // If Supabase is not configured, use demo user
+        if (!isSupabaseAvailable() || !supabaseClient) {
+          setUser(DEFAULT_USER)
           setLoading(false)
           return
         }
@@ -51,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const {
           data: { session: currentSession },
           error: sessionError,
-        } = await supabase.auth.getSession()
+        } = await supabaseClient.auth.getSession()
 
         if (sessionError) {
           // If Supabase has an error, fall back to demo user
@@ -95,17 +92,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initAuth()
 
-    // Subscribe to auth changes
+    // Only subscribe to auth changes if Supabase is available
+    if (!isSupabaseAvailable() || !supabaseClient) {
+      return
+    }
+
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+    } = supabaseClient.auth.onAuthStateChange((_event, currentSession) => {
       setSession(currentSession)
 
       if (currentSession?.user) {
         const mappedUser: User = {
           id: currentSession.user.id,
-          username: currentSession.user.user_metadata?.username || currentSession.user.email?.split("@")[0] || "user",
-          name: currentSession.user.user_metadata?.full_name || currentSession.user.email || "User",
+          username:
+            currentSession.user.user_metadata?.username ||
+            currentSession.user.email?.split("@")[0] ||
+            "user",
+          name:
+            currentSession.user.user_metadata?.full_name ||
+            currentSession.user.email ||
+            "User",
           email: currentSession.user.email || "",
           role: (currentSession.user.user_metadata?.role as UserRole) || "staff",
           createdAt: currentSession.user.created_at || new Date().toISOString(),
@@ -119,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       subscription?.unsubscribe()
     }
-  }, [supabase])
+  }, [supabaseClient])
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
