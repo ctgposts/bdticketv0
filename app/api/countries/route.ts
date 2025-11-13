@@ -1,81 +1,21 @@
 import { NextResponse } from "next/server"
-
-const DEMO_COUNTRIES = [
-  {
-    id: "country-1",
-    name: "Saudi Arabia",
-    code: "KSA",
-    flag: "🇸🇦",
-    ticketCount: 55,
-  },
-  {
-    id: "country-2",
-    name: "United Arab Emirates",
-    code: "UAE",
-    flag: "🇦🇪",
-    ticketCount: 55,
-  },
-  {
-    id: "country-3",
-    name: "Qatar",
-    code: "QAT",
-    flag: "🇶🇦",
-    ticketCount: 25,
-  },
-  {
-    id: "country-4",
-    name: "Kuwait",
-    code: "KWT",
-    flag: "🇰🇼",
-    ticketCount: 20,
-  },
-  {
-    id: "country-5",
-    name: "Oman",
-    code: "OMN",
-    flag: "🇴🇲",
-    ticketCount: 15,
-  },
-  {
-    id: "country-6",
-    name: "Bahrain",
-    code: "BHR",
-    flag: "🇧🇭",
-    ticketCount: 10,
-  },
-  {
-    id: "country-7",
-    name: "Malaysia",
-    code: "MYS",
-    flag: "🇲🇾",
-    ticketCount: 18,
-  },
-  {
-    id: "country-8",
-    name: "Singapore",
-    code: "SGP",
-    flag: "🇸🇬",
-    ticketCount: 12,
-  },
-  {
-    id: "country-9",
-    name: "Thailand",
-    code: "THA",
-    flag: "🇹🇭",
-    ticketCount: 14,
-  },
-  {
-    id: "country-10",
-    name: "Turkey",
-    code: "TUR",
-    flag: "🇹🇷",
-    ticketCount: 22,
-  },
-]
+import { createClient } from "@/lib/supabase/server"
 
 export async function GET() {
   try {
-    return NextResponse.json(DEMO_COUNTRIES)
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from("countries")
+      .select("*")
+      .order("name")
+
+    if (error) {
+      console.error("[v0] Supabase error:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json(data || [])
   } catch (error) {
     console.error("[v0] Error fetching countries:", error)
     return NextResponse.json({ error: "Failed to fetch countries" }, { status: 500 })
@@ -85,14 +25,25 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
+    const supabase = await createClient()
 
-    const newCountry = {
-      id: `country-${Date.now()}`,
-      ...body,
-      ticketCount: 0,
+    const { data, error } = await supabase
+      .from("countries")
+      .insert([
+        {
+          name: body.name,
+          code: body.code,
+          flag: body.flag,
+        },
+      ])
+      .select()
+      .single()
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    return NextResponse.json(newCountry)
+    return NextResponse.json(data, { status: 201 })
   } catch (error) {
     console.error("[v0] Error creating country:", error)
     return NextResponse.json({ error: "Failed to create country" }, { status: 500 })
