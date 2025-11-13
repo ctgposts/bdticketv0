@@ -206,7 +206,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await supabase.auth.signOut()
+      if (isSupabaseAvailable() && supabaseClient) {
+        await supabaseClient.auth.signOut()
+      }
       setUser(DEFAULT_USER) // Reset to demo user
       setSession(null)
       router.push("/login")
