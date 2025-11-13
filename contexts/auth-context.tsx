@@ -130,7 +130,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      if (!isSupabaseAvailable() || !supabaseClient) {
+        return {
+          success: false,
+          error: "Supabase is not configured. Use demo mode instead.",
+        }
+      }
+
+      const { error } = await supabaseClient.auth.signInWithPassword({
         email,
         password,
       })
