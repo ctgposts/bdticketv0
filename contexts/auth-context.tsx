@@ -38,29 +38,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initAuth = async () => {
       try {
+        // Check if Supabase is configured
+        if (
+          !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+          !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        ) {
+          setUser(DEFAULT_USER) // Use demo user if Supabase not configured
+          setLoading(false)
+          return
+        }
+
         const {
           data: { session: currentSession },
           error: sessionError,
         } = await supabase.auth.getSession()
 
         if (sessionError) {
-          console.error("Session error:", sessionError)
-          setUser(DEFAULT_USER) // Fallback to demo user for development
+          // If Supabase has an error, fall back to demo user
+          setUser(DEFAULT_USER)
           setLoading(false)
           return
         }
 
         if (currentSession?.user) {
           setSession(currentSession)
-          
+
           // Map Supabase user to local User interface
           const mappedUser: User = {
             id: currentSession.user.id,
-            username: currentSession.user.user_metadata?.username || currentSession.user.email?.split("@")[0] || "user",
-            name: currentSession.user.user_metadata?.full_name || currentSession.user.email || "User",
+            username:
+              currentSession.user.user_metadata?.username ||
+              currentSession.user.email?.split("@")[0] ||
+              "user",
+            name:
+              currentSession.user.user_metadata?.full_name ||
+              currentSession.user.email ||
+              "User",
             email: currentSession.user.email || "",
             role: (currentSession.user.user_metadata?.role as UserRole) || "staff",
-            createdAt: currentSession.user.created_at || new Date().toISOString(),
+            createdAt:
+              currentSession.user.created_at || new Date().toISOString(),
           }
           setUser(mappedUser)
         } else {
@@ -69,8 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(null)
         }
       } catch (error) {
-        console.error("Auth initialization error:", error)
-        setUser(DEFAULT_USER) // Fallback to demo user
+        // If any error occurs, fall back to demo user
+        setUser(DEFAULT_USER)
       } finally {
         setLoading(false)
       }
