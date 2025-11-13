@@ -1,19 +1,25 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import type { User, LoginRequest } from "@/types"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
+import type { User, UserRole } from "@/types"
+import type { AuthSession } from "@supabase/supabase-js"
 
 interface AuthContextType {
   user: User | null
-  login: (credentials: LoginRequest) => Promise<boolean>
-  logout: () => void
+  session: AuthSession | null
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  signup: (email: string, password: string, displayName: string) => Promise<{ success: boolean; error?: string }>
+  logout: () => Promise<void>
   loading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Default demo user for development
 const DEFAULT_USER: User = {
-  id: "default-user-1",
+  id: "demo-user",
   username: "admin",
   name: "Administrator",
   email: "admin@example.com",
@@ -22,24 +28,169 @@ const DEFAULT_USER: User = {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
+  const [session, setSession] = useState<AuthSession | null>(null)
   const [loading, setLoading] = useState(true)
+  const supabase = createClient()
 
+  // Initialize auth state from session
   useEffect(() => {
-    setUser(DEFAULT_USER)
-    setLoading(false)
-  }, [])
+    const initAuth = async () => {
+      try {
+        const {
+          data: { session: currentSession },
+          error: sessionError,
+        } = await supabase.auth.getSession()
 
-  const login = async (credentials: LoginRequest): Promise<boolean> => {
-    setUser(DEFAULT_USER)
-    return true
+        if (sessionError) {
+          console.error("Session error:", sessionError)
+          setUser(DEFAULT_USER) // Fallback to demo user for development
+          setLoading(false)
+          return
+        }
+
+        if (currentSession?.user) {
+          setSession(currentSession)
+          
+          // Map Supabase user to local User interface
+          const mappedUser: User = {
+            id: currentSession.user.id,
+            username: currentSession.user.user_metadata?.username || currentSession.user.email?.split("@")[0] || "user",
+            name: currentSession.user.user_metadata?.full_name || currentSession.user.email || "User",
+            email: currentSession.user.email || "",
+            role: (currentSession.user.user_metadata?.role as UserRole) || "staff",
+            createdAt: currentSession.user.created_at || new Date().toISOString(),
+          }
+          setUser(mappedUser)
+        } else {
+          // No session, use demo user for development
+          setUser(DEFAULT_USER)
+          setSession(null)
+        }
+      } catch (error) {
+        console.error("Auth initialization error:", error)
+        setUser(DEFAULT_USER) // Fallback to demo user
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    initAuth()
+
+    // Subscribe to auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      setSession(currentSession)
+
+      if (currentSession?.user) {
+        const mappedUser: User = {
+          id: currentSession.user.id,
+          username: currentSession.user.user_metadata?.username || currentSession.user.email?.split("@")[0] || "user",
+          name: currentSession.user.user_metadata?.full_name || currentSession.user.email || "User",
+          email: currentSession.user.email || "",
+          role: (currentSession.user.user_metadata?.role as UserRole) || "staff",
+          createdAt: currentSession.user.created_at || new Date().toISOString(),
+        }
+        setUser(mappedUser)
+      } else {
+        setUser(DEFAULT_USER)
+      }
+    })
+
+    return () => {
+      subscription?.unsubscribe()
+    }
+  }, [supabase])
+
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) {
+        return {
+          success: false,
+          error: error.message || "Login failed",
+        }
+      }
+
+      router.push("/dashboard")
+      return { success: true }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred during login"
+      return {
+        success: false,
+        error: errorMessage,
+      }
+    }
   }
 
-  const logout = () => {
-    setUser(DEFAULT_USER)
+  const signup = async (
+    email: string,
+    password: string,
+    displayName: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: displayName,
+            username: email.split("@")[0],
+            role: "staff",
+          },
+        },
+      })
+
+      if (error) {
+        return {
+          success: false,
+          error: error.message || "Signup failed",
+        }
+      }
+
+      return {
+        success: true,
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred during signup"
+      return {
+        success: false,
+        error: errorMessage,
+      }
+    }
   }
 
-  return <AuthContext.Provider value={{ user, login, logout, loading }}>{children}</AuthContext.Provider>
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut()
+      setUser(DEFAULT_USER) // Reset to demo user
+      setSession(null)
+      router.push("/login")
+    } catch (error) {
+      console.error("Logout error:", error)
+    }
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        login,
+        signup,
+        logout,
+        loading,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {
